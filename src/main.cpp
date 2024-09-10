@@ -8,6 +8,8 @@
 
 #include <random>
 
+#include "utility.hpp"
+
 struct Coordinates
 {
     Coordinates() = default;
@@ -84,53 +86,6 @@ enum class TileState
     Empty = 0, Unit
 };
 
-template<typename T, std::size_t N>
-class FixedSizeVector
-{
-public:
-    using Underlying = std::array<T, N>;
-    using CUnderlying = std::array<const T, N>;
-
-    void push_back(const T &obj)
-    {
-        (*m_end++) = obj;
-    }
-
-    Underlying::iterator begin()
-    {
-        return m_arr.begin();
-    }
-
-    const CUnderlying::iterator begin() const
-    {
-        return m_arr.cbegin();
-    }
-
-    Underlying::iterator end()
-    {
-        return m_end;
-    }
-
-    const CUnderlying::iterator end() const
-    {
-        return m_end;
-    }
-
-    const T &operator[](std::size_t idx) const
-    {
-        return m_arr[idx];
-    }
-
-    std::size_t size() const 
-    {
-        return std::distance(begin(), end());
-    }
-
-private:
-    Underlying m_arr;
-    Underlying::iterator m_end{m_arr.begin()};
-
-};
 
 class Arena
 {
@@ -199,7 +154,7 @@ public:
         using std::cout;
         using std::endl;
 
-        auto unit_pos {m_1d_units_pos[unit_idx]};
+        auto unit_pos {static_cast<long long int>(m_1d_units_pos[unit_idx])};
         std::cout << "unit_pos: " << unit_pos << std::endl;
 
         struct Obstacles
@@ -216,9 +171,9 @@ public:
         };
         Obstacles wall_obst{}/*, other_obst{}*/;
 
-        const auto tiles_size {m_tiles.size()};
-        const auto width{get_width()};
-        const auto height{get_height()};
+        const auto tiles_size {static_cast<int>(m_tiles.size())};
+        const auto width{static_cast<int>(get_width())};
+        const auto height{static_cast<int>(get_height())};
 
         FixedSizeVector<std::size_t, 8> ret;
 
