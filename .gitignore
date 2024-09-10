@@ -1,2 +1,5 @@
 # compiled source
-*.a
+*.out
+
+# build dir
+build/

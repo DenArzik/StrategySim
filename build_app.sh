@@ -1,3 +1,3 @@
 #!/bin/bash
 
-g++ -g -Wall -std=c++20 main.cpp
+g++ -g -Wall -std=c++20 -o StrategySim src/main.cpp
