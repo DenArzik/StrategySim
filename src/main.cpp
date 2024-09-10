@@ -1,12 +1,9 @@
 #include <vector>
-#include <array>
 #include <memory>
 #include <thread>
 
 #include <iostream>
 #include <cstdlib>
-
-#include <random>
 
 #include "utility.hpp"
 
@@ -155,7 +152,7 @@ public:
         using std::endl;
 
         auto unit_pos {static_cast<long long int>(m_1d_units_pos[unit_idx])};
-        std::cout << "unit_pos: " << unit_pos << std::endl;
+        //std::cout << "unit_pos: " << unit_pos << std::endl;
 
         struct Obstacles
         {
@@ -179,83 +176,83 @@ public:
 
         if(unit_pos % get_width() == 0 )
         {
-            cout << "hit a left wall\n";
+            // cout << "hit a left wall\n";
             wall_obst.left = 1;
         }
         else if(unit_pos-1 >= 0 && m_tiles[unit_pos - 1] != TileState::Empty)
         {
-            cout << "hit a left obstacle\n";
+            // cout << "hit a left obstacle\n";
             //other_obst.left = 1;
         }
         else
         {
-            cout << "can go left\n";
+            // cout << "can go left\n";
             ret.push_back(unit_pos-1);
         }
         if((unit_pos+1) % get_width() == 0)
         {
-            cout << "hit a right wall\n";
+            // cout << "hit a right wall\n";
             wall_obst.right = 1;
         }
         else if(unit_pos+1 <= tiles_size && m_tiles[unit_pos + 1] != TileState::Empty)
         {
-            cout << "hit a right obstacle\n";
+            // cout << "hit a right obstacle\n";
             //other_obst.right = 1;
         }
         else
         {
-            cout << "can go right: " << unit_pos+1 << endl;
+            // cout << "can go right: " << unit_pos+1 << endl;
             ret.push_back(unit_pos+1);
         }
         if(unit_pos >= 0 && unit_pos <= width-1)
         {
-            cout << "hit a top wall\n";
+            // cout << "hit a top wall\n";
             wall_obst.top = 1;
         }
         else if(unit_pos - width >= 0 && m_tiles[unit_pos - width] != TileState::Empty)
         {
-            cout << "hit a top obstacle\n";
+            // cout << "hit a top obstacle\n";
             //other_obst.top = 1;
         }
         else
         {
-            cout << "can go top: " << unit_pos - width << endl;
+            // cout << "can go top: " << unit_pos - width << endl;
             ret.push_back(unit_pos - width);
         }
         if(unit_pos >= width * (height-1))
         {
-            cout << "hit a bottom wall\n";
+            // cout << "hit a bottom wall\n";
             wall_obst.bot = 1;
         }
         else if(unit_pos + width < tiles_size && m_tiles[unit_pos + width] != TileState::Empty)
         {
-            cout << "hit a bottom obstacle\n";
+            // cout << "hit a bottom obstacle\n";
             //other_obst.top = 1;
         }
         else
         {
-            cout << "can go bottom: " << unit_pos + width << endl;
+            // cout << "can go bottom: " << unit_pos + width << endl;
             ret.push_back(unit_pos + width);
         }
         
         if(!(wall_obst.left == 1 || wall_obst.top == 1) && unit_pos - width > 0 && m_tiles[unit_pos - width - 1] == TileState::Empty)
         {
-            cout << "can go tl: " << unit_pos - width - 1 << endl;
+            // cout << "can go tl: " << unit_pos - width - 1 << endl;
             ret.push_back(unit_pos - width - 1);
         }
         if(!(wall_obst.right == 1 || wall_obst.top == 1) && unit_pos - width + 1 >= 0 && m_tiles[unit_pos - width + 1] == TileState::Empty)
         {
-            cout << "can go tr: " << unit_pos - width + 1 << endl;
+            // cout << "can go tr: " << unit_pos - width + 1 << endl;
             ret.push_back(unit_pos - width + 1);
         }
         if(!(wall_obst.left == 1 || wall_obst.bot == 1) && unit_pos + width - 1 < tiles_size && m_tiles[unit_pos + width - 1] == TileState::Empty)
         {
-            cout << "can go bl: " << unit_pos + width - 1 << endl;
+            // cout << "can go bl: " << unit_pos + width - 1 << endl;
             ret.push_back(unit_pos + width - 1);
         }
         if(!(wall_obst.right == 1 || wall_obst.bot == 1) && unit_pos + width + 1 < tiles_size && m_tiles[unit_pos + width + 1] == TileState::Empty)
         {
-            cout << "can go br: " << unit_pos + width + 1 << endl;
+            // cout << "can go br: " << unit_pos + width + 1 << endl;
             ret.push_back(unit_pos + width + 1);
         }
 
@@ -355,10 +352,8 @@ public:
             const auto possible_tiles {m_arena.get_adjacent_unit_coordinates(i)};
             const auto options {possible_tiles.size() - 1};
 
-            std::random_device dev;
-            std::mt19937 rng {dev()};
-            std::uniform_int_distribution<std::mt19937::result_type> dist6 {0,options};
-            m_arena.move_unit(i, possible_tiles[dist6(rng)]);
+            const auto rand_int {RNG::random_uniform_int((unsigned long)0, options)};
+            m_arena.move_unit(i, possible_tiles[rand_int]);
         }
     }
 
@@ -375,11 +370,19 @@ int main()
     level.setup_level();
     level.setup_units();
 
+    {
+        Debug::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 1'000'000");
+        for(auto i{0}; i < 1'000'000; ++i)
+        {
+            level.fiddle();
+        }
+        return 0;
+    }
+
     while(true)
     {
         level.depict();
         level.fiddle();
-        //std::this_thread::sleep_for(std::chrono::seconds(2));
         getchar();
     }
 
