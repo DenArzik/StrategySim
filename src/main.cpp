@@ -8,8 +8,6 @@
 
 #include "utility.hpp"
 
-#include <csignal>
-
 using SizeT = std::size_t;
 
 struct Coordinates
@@ -399,21 +397,31 @@ private:
 
 void time_test(Level &lvl)
 {
-    Timing::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 1'000'000");
-    for(auto i{0}; i < 1'000'000; ++i)
+    Timing::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 10'000'000");
+    for(auto i{0}; i < 10'000'000; ++i)
     {
         lvl.fiddle();
     }
 }
 
+void test_random()
+{
+    for(int i{0}; i < 15; ++i)
+    {
+        std::cout << "Random number " << i << ": " << (long int)RNG::random_uint() << std::endl;
+    }
+}
+
 int main()
 {
+    test_random();
+    return 0;
     Level level;
     level.setup_level();
     level.setup_units();
 
-    //time_test(level);
-    //return 0;
+    time_test(level);
+    return 0;
 
     while(true)
     {

@@ -1,3 +1,5 @@
+Random is not random at all - fix;
+
 For Logging:
     fmtlog - https://github.com/MengRao/fmtlog
     Requires:

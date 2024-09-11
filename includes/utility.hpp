@@ -11,24 +11,12 @@ template<typename T, std::size_t N>
 class FixedSizeVector
 {
 public:
-    FixedSizeVector() = default;
-    ~FixedSizeVector() = default;
-
-    FixedSizeVector(const FixedSizeVector &rhs) = delete;
-
-    FixedSizeVector(FixedSizeVector &&rhs)
-    {
-        const auto tmp_size{rhs.size()};
-        m_arr = std::move(rhs.m_arr);
-        m_end = m_arr.begin() + tmp_size;
-    }
-
     using Underlying = std::array<T, N>;
     using CUnderlying = std::array<const T, N>;
 
     void push_back(const T &obj)
     {
-        (*m_end++) = obj;
+        m_arr[m_last_elem_idx++] = obj;
     }
 
     Underlying::iterator begin()
@@ -43,12 +31,12 @@ public:
 
     Underlying::iterator end()
     {
-        return m_end;
+        return begin() + m_last_elem_idx;
     }
 
     const CUnderlying::iterator end() const
     {
-        return m_end;
+        return begin() + m_last_elem_idx;
     }
 
     const T &operator[](std::size_t idx) const
@@ -58,18 +46,17 @@ public:
 
     std::size_t size() const 
     {
-        return std::distance(begin(), end());
+        return m_last_elem_idx;
     }
 
     bool empty() const
     {
-        return size() == 0;
+        return m_last_elem_idx == 0;
     }
 
 private:
     Underlying m_arr;
-    Underlying::iterator m_end{m_arr.begin()};
-
+    std::size_t m_last_elem_idx{0};
 };
 
 namespace RNG
