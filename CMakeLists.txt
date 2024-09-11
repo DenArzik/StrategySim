@@ -41,5 +41,3 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(${ProjectName} ${SOURCES})
 
-# build configurations
-

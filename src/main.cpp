@@ -4,21 +4,25 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <limits>
 
 #include "utility.hpp"
+
+#include <csignal>
+
+using SizeT = std::size_t;
 
 struct Coordinates
 {
     Coordinates() = default;
-    Coordinates(std::size_t x, std::size_t y) : m_x{x}, m_y{y} {}
-    std::size_t m_x{0}, m_y{0};
+    Coordinates(SizeT x, SizeT y) : m_x{x}, m_y{y} {}
+    SizeT m_x{0}, m_y{0};
 };
 
 using Dimensions = Coordinates;
 
-
-using DamageUnits = std::size_t;
-using HealthUnits = std::size_t;
+using DamageUnits = SizeT;
+using HealthUnits = SizeT;
 
 class Unit
 {
@@ -87,13 +91,13 @@ enum class TileState
 class Arena
 {
 public:
-    void init_map(std::size_t width, std::size_t height)
+    void init_map(SizeT width, SizeT height)
     {
-        if(width <= 0)
+        if(width < 2)
         {
             throw "Arena::init_map width is invalid";
         }
-        if(height <= 0)
+        if(height < 2)
         {
             throw "Arena::init_map height is invalid";
         }
@@ -105,7 +109,7 @@ public:
         m_tiles = std::vector<TileState>(m_width * m_height, TileState::Empty);
     }
 
-    void place_unit(const Unit *unit, std::size_t pos)
+    void place_unit(const Unit *unit, SizeT pos)
     {
         m_tiles[pos] = TileState::Unit;
         m_units.push_back(unit);
@@ -113,22 +117,22 @@ public:
         m_1d_units_pos.push_back(pos);
     }
 
-    void move_unit(std::size_t unit_idx, std::size_t pos)
+    void move_unit(SizeT unit_idx, SizeT pos)
     {
         m_tiles[m_1d_units_pos[unit_idx]] = TileState::Empty;
         m_tiles[pos] = TileState::Unit;
         m_1d_units_pos[unit_idx] = pos;
     }
 
-    std::size_t get_width() const { return m_width; }
-    std::size_t get_height() const { return m_height; }
+    SizeT get_width() const { return m_width; }
+    SizeT get_height() const { return m_height; }
 
-    std::size_t to_1d(const Coordinates &coord) const
+    SizeT to_1d(const Coordinates &coord) const
     {
         return coord.m_y * get_width() + coord.m_x;
     }
 
-    Coordinates to_2d(std::size_t idx) const
+    Coordinates to_2d(SizeT idx) const
     {
         Coordinates ret {};
         ret.m_x = idx / get_height();
@@ -141,17 +145,17 @@ public:
         return m_tiles;
     }
 
-    const std::vector<std::size_t> &get_unit_pos() const
+    const std::vector<SizeT> &get_unit_pos() const
     {
         return m_1d_units_pos;
     }
 
-    FixedSizeVector<std::size_t, 8> get_adjacent_unit_coordinates(std::size_t unit_idx) const
+    FixedSizeVector<SizeT, 8> get_adjacent_unit_coordinates(SizeT unit_idx) const
     {
         using std::cout;
         using std::endl;
 
-        auto unit_pos {static_cast<long long int>(m_1d_units_pos[unit_idx])};
+        auto unit_pos {m_1d_units_pos[unit_idx]};
         //std::cout << "unit_pos: " << unit_pos << std::endl;
 
         struct Obstacles
@@ -168,89 +172,108 @@ public:
         };
         Obstacles wall_obst{}/*, other_obst{}*/;
 
-        const auto tiles_size {static_cast<int>(m_tiles.size())};
-        const auto width{static_cast<int>(get_width())};
-        const auto height{static_cast<int>(get_height())};
+        const auto tiles_size {m_tiles.size()};
+        const auto width{get_width()};
+        const auto height{get_height()};
 
-        FixedSizeVector<std::size_t, 8> ret;
+        FixedSizeVector<SizeT, 8> ret;
 
-        if(unit_pos % get_width() == 0 )
+        // left check
+        if(unit_pos % width == 0)
         {
             // cout << "hit a left wall\n";
             wall_obst.left = 1;
         }
-        else if(unit_pos-1 >= 0 && m_tiles[unit_pos - 1] != TileState::Empty)
+        else if(unit_pos > 0)
         {
-            // cout << "hit a left obstacle\n";
-            //other_obst.left = 1;
+            if(m_tiles[unit_pos - 1] != TileState::Empty)
+            {
+                // cout << "hit a left obstacle\n";
+                //other_obst.left = 1;
+            }
+            else
+            {
+                // cout << "can go left\n";
+                ret.push_back(unit_pos-1);
+            }
         }
-        else
+
+        // right check
+        if(unit_pos < tiles_size)
         {
-            // cout << "can go left\n";
-            ret.push_back(unit_pos-1);
+            if((unit_pos+1) % width == 0)
+            {
+                // cout << "hit a right wall\n";
+                wall_obst.right = 1;
+            }
+            else if(m_tiles[unit_pos + 1] != TileState::Empty)
+            {
+                // cout << "hit a right obstacle\n";
+                //other_obst.right = 1;
+            }
+            else
+            {
+                // cout << "can go right: " << unit_pos+1 << endl;
+                ret.push_back(unit_pos+1);
+            }
         }
-        if((unit_pos+1) % get_width() == 0)
-        {
-            // cout << "hit a right wall\n";
-            wall_obst.right = 1;
-        }
-        else if(unit_pos+1 <= tiles_size && m_tiles[unit_pos + 1] != TileState::Empty)
-        {
-            // cout << "hit a right obstacle\n";
-            //other_obst.right = 1;
-        }
-        else
-        {
-            // cout << "can go right: " << unit_pos+1 << endl;
-            ret.push_back(unit_pos+1);
-        }
-        if(unit_pos >= 0 && unit_pos <= width-1)
+
+        // top check
+        if(unit_pos < width)
         {
             // cout << "hit a top wall\n";
             wall_obst.top = 1;
         }
-        else if(unit_pos - width >= 0 && m_tiles[unit_pos - width] != TileState::Empty)
+        else if(unit_pos >= width)
         {
-            // cout << "hit a top obstacle\n";
-            //other_obst.top = 1;
+            if(m_tiles[unit_pos - width] != TileState::Empty)
+            {
+                // cout << "hit a top obstacle\n";
+                //other_obst.top = 1;
+            }
+            else
+            {
+                // cout << "can go top: " << unit_pos - width << endl;
+                ret.push_back(unit_pos - width);
+            }
         }
-        else
-        {
-            // cout << "can go top: " << unit_pos - width << endl;
-            ret.push_back(unit_pos - width);
-        }
+        
+        // bot check
         if(unit_pos >= width * (height-1))
         {
             // cout << "hit a bottom wall\n";
             wall_obst.bot = 1;
         }
-        else if(unit_pos + width < tiles_size && m_tiles[unit_pos + width] != TileState::Empty)
+        else if(tiles_size - width > unit_pos)
         {
-            // cout << "hit a bottom obstacle\n";
-            //other_obst.top = 1;
-        }
-        else
-        {
-            // cout << "can go bottom: " << unit_pos + width << endl;
-            ret.push_back(unit_pos + width);
+            if(m_tiles[unit_pos + width] != TileState::Empty)
+            {
+                // cout << "hit a bottom obstacle\n";
+                //other_obst.top = 1;
+            }
+            else
+            {
+                // cout << "can go bottom: " << unit_pos + width << endl;
+                ret.push_back(unit_pos + width);
+            }
         }
         
-        if(!(wall_obst.left == 1 || wall_obst.top == 1) && unit_pos - width > 0 && m_tiles[unit_pos - width - 1] == TileState::Empty)
+        if(!(wall_obst.left == 1 || wall_obst.top == 1) && unit_pos > width && m_tiles[unit_pos - width - 1] == TileState::Empty)
         {
             // cout << "can go tl: " << unit_pos - width - 1 << endl;
             ret.push_back(unit_pos - width - 1);
         }
-        if(!(wall_obst.right == 1 || wall_obst.top == 1) && unit_pos - width + 1 >= 0 && m_tiles[unit_pos - width + 1] == TileState::Empty)
+        if(!(wall_obst.right == 1 || wall_obst.top == 1) && unit_pos >= width && m_tiles[unit_pos - width + 1] == TileState::Empty)
         {
             // cout << "can go tr: " << unit_pos - width + 1 << endl;
             ret.push_back(unit_pos - width + 1);
         }
-        if(!(wall_obst.left == 1 || wall_obst.bot == 1) && unit_pos + width - 1 < tiles_size && m_tiles[unit_pos + width - 1] == TileState::Empty)
+        if(!(wall_obst.left == 1 || wall_obst.bot == 1) && tiles_size - width > unit_pos && m_tiles[unit_pos + width - 1] == TileState::Empty)
         {
             // cout << "can go bl: " << unit_pos + width - 1 << endl;
             ret.push_back(unit_pos + width - 1);
         }
-        if(!(wall_obst.right == 1 || wall_obst.bot == 1) && unit_pos + width + 1 < tiles_size && m_tiles[unit_pos + width + 1] == TileState::Empty)
+        if(!(wall_obst.right == 1 || wall_obst.bot == 1) && tiles_size - width - 1 > unit_pos && m_tiles[unit_pos + width + 1] == TileState::Empty)
         {
             // cout << "can go br: " << unit_pos + width + 1 << endl;
             ret.push_back(unit_pos + width + 1);
@@ -260,13 +283,12 @@ public:
     }
 
 private:
-    std::size_t m_width {0}, m_height {0};
+    SizeT m_width {0}, m_height {0};
 
     std::vector<TileState> m_tiles;
 
     std::vector<const Unit *> m_units;
-    //std::vector<Coordinates> m_units_pos;
-    std::vector<std::size_t> m_1d_units_pos;    
+    std::vector<SizeT> m_1d_units_pos;    
 
 };
 
@@ -275,33 +297,35 @@ class Level
 public:
     void setup_level()
     {
-        constexpr std::size_t width = 3;
-        constexpr std::size_t height = 3;
+        constexpr SizeT width = 5;
+        constexpr SizeT height = 5;
+
+        // size checks
+        static_assert(width > 1);
+        static_assert(height > 1);
+        static_assert(width < (std::numeric_limits<SizeT>::max() / height));
 
         m_arena.init_map(width, height);
     }
 
     void setup_units()
     {
-        constexpr std::size_t team_size {3};
+        constexpr std::size_t team_size {5};
+        if(team_size > (m_arena.get_width() * m_arena.get_height()) / 2)
+        {
+            throw "team_size too large";
+        }
+
         team_a.resize(team_size);
 
 
         // setup units on the opposide corners of each others
-        //std::size_t idx {0};
-        /*for(auto &itm : team_a)
+        std::size_t idx {0};
+        for(auto &itm : team_a)
         {
             itm = create_base_attacker();
             m_arena.place_unit(&*itm, idx++);
-        }*/
-        team_a[0] = create_base_attacker();
-        m_arena.place_unit(&*team_a[0], 0);
-
-        team_a[1] = create_base_attacker();
-        m_arena.place_unit(&*team_a[1], 1);
-
-        team_a[2] = create_base_attacker();
-        m_arena.place_unit(&*team_a[2], 2);
+        }
 
         /*team_b.resize(team_size);
         idx = m_arena.get_width() * m_arena.get_height() - 1;
@@ -314,7 +338,7 @@ public:
 
     void depict()
     {
-        //std::system("clear");
+        std::system("clear");
         static std::size_t iteration{0};
         std::cout << "It: " << iteration++ << std::endl;
 
@@ -344,15 +368,24 @@ public:
 
     void fiddle()
     {
-        //auto units_count {m_arena.get_unit_pos().size()}
+        //const auto units_count {m_arena.get_unit_pos().size()};
         const auto units_count {1};
 
-        for(int i{0}; i < units_count;++i)
+        for(std::size_t i{0}; i < units_count;++i)
         {
             const auto possible_tiles {m_arena.get_adjacent_unit_coordinates(i)};
+            
+            if(possible_tiles.empty())
+            {
+                continue;
+            }
+            if(possible_tiles.size() == 1)
+            {
+                m_arena.move_unit(i, possible_tiles[0]);    
+                continue;
+            }
             const auto options {possible_tiles.size() - 1};
-
-            const auto rand_int {RNG::random_uniform_int((unsigned long)0, options)};
+            const auto rand_int {RNG::random_uniform_uint((unsigned long)0, options)};
             m_arena.move_unit(i, possible_tiles[rand_int]);
         }
     }
@@ -364,20 +397,23 @@ private:
 
 };
 
+void time_test(Level &lvl)
+{
+    Timing::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 1'000'000");
+    for(auto i{0}; i < 1'000'000; ++i)
+    {
+        lvl.fiddle();
+    }
+}
+
 int main()
 {
     Level level;
     level.setup_level();
     level.setup_units();
 
-    {
-        Debug::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 1'000'000");
-        for(auto i{0}; i < 1'000'000; ++i)
-        {
-            level.fiddle();
-        }
-        return 0;
-    }
+    //time_test(level);
+    //return 0;
 
     while(true)
     {
