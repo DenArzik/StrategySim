@@ -1,5 +1,7 @@
 Random is not random at all - fix;
 
+Add testing because i want to track the changes in performance between modifications.
+
 For Logging:
     fmtlog - https://github.com/MengRao/fmtlog
     Requires:
