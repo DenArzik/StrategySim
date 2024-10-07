@@ -99,6 +99,11 @@ public:
         return Distrubutor::distribute(m_engine, min, max);
     }
 
+    rng_uint random_uint()
+    {
+        return m_engine.generate_number();
+    }
+
 
 private:
     Generator()

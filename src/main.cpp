@@ -326,13 +326,13 @@ public:
             m_arena.place_unit(&*itm, idx++);
         }
 
-        /*team_b.resize(team_size);
+        team_b.resize(team_size);
         idx = m_arena.get_width() * m_arena.get_height() - 1;
         for(auto &itm : team_b)
         {
             itm = create_base_attacker();
             m_arena.place_unit(&*itm, idx--);
-        }*/
+        }
     }
 
     void depict()
@@ -367,8 +367,8 @@ public:
 
     void fiddle()
     {
-        //const auto units_count {m_arena.get_unit_pos().size()};
-        const auto units_count {1};
+        const auto units_count {m_arena.get_unit_pos().size()};
+        //const auto units_count {1};
 
         for(std::size_t i{0}; i < units_count;++i)
         {
@@ -396,23 +396,11 @@ private:
 
 };
 
-void time_test(Level &lvl)
-{
-    Timing::ScopedTimeMeasurer<std::chrono::milliseconds> tm("Fiddle 10'000'000");
-    for(auto i{0}; i < 10'000'000; ++i)
-    {
-        lvl.fiddle();
-    }
-}
-
 int main()
 {
     Level level;
     level.setup_level();
     level.setup_units();
-
-    //time_test(level);
-    //return 0;
 
     while(true)
     {
