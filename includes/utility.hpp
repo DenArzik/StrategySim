@@ -2,10 +2,10 @@
 
 #include <array>
 #include <chrono>
-#include <random>
-#include <concepts>
 
 #include <iostream>
+
+#include "rng.hpp"
 
 template<typename T, std::size_t N>
 class FixedSizeVector
@@ -58,129 +58,6 @@ private:
     Underlying m_arr;
     std::size_t m_last_elem_idx{0};
 };
-
-namespace RNG
-{
-
-using rng_uint = unsigned int;
-
-// https://stackoverflow.com/questions/1046714/what-is-a-good-random-number-generator-for-a-game
-
-//using rng_uint = unsigned int;
-static rng_uint x=123456789, y=362436069, z=521288629;
-
-static rng_uint xorshf96()
-{          
-    rng_uint t;
-    x ^= x << 16;
-    x ^= x >> 5;
-    x ^= x << 1;
-
-    t = x;
-    x = y;
-    y = z;
-    z = t ^ x ^ y;
-
-    return z;
-}
-
-rng_uint random_uint()
-{
-    return xorshf96();
-}
-
-
-template<typename T>
-concept UnsignedIntegral = std::is_integral<T>::value && std::is_unsigned<T>::value;
-
-template<UnsignedIntegral T>
-rng_uint random_uniform_uint(T min, T max)
-{
-    const auto rangerange {max - min + 1};
-    const auto normalized_value{random_uint() % range};        
-    return normalized_value + min;
-}
-
-class RandomDeviceSeedGenerator
-{
-public:
-    static rng_uint generate()
-    {
-        std::random_device dev;
-        return dev();
-    }
-};
-
-class CurrentTimeSeedGenerator
-{
-public:
-    static rng_uint generate()
-    {
-        return time(0);
-    }
-};
-
-class MTEngine
-{
-public:
-    MTEngine(rng_uint seed)
-    : m_rng{seed}
-    {
-    }
-
-    rng_uint generate_number()
-    {
-        return m_rng();
-    }
-
-private:
-    std::mt19937_64 m_rng;
-};
-
-class DivDistributor
-{
-public:
-    template<UnsignedIntegral T>
-    static rng_uint distribute(rng_uint random_number, T min, T max)
-    {
-        const auto rangerange {max - min + 1};
-        const auto normalized_value{random_number % range};
-        return normalized_value + min;
-    }
-};
-
-class StdUniformDistributor
-{
-public:
-    template<UnsignedIntegral T>
-    static rng_uint distribute(rng_uint random_number, T min, T max)
-    {
-        std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
-        return dist(random_number);
-    }
-};
-
-template<typename SeedGenerator, typename Engine, typename Distrubutor>
-class RandomNumber
-{
-public:
-    RandomNumber()
-    : m_engine{SeedGenerator::generate()}
-    {
-
-    }
-
-    template<UnsignedIntegral T>
-    static rng_uint get_random_uniform_uint(T min, T max)
-    {
-        return Uniformer::get_distributed_value(Hasher::get_hash(), min, max);
-    }
-
-private:
-    Engine m_engine;
-};
-
-}
 
 
 namespace Timing

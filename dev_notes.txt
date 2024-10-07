@@ -1,4 +1,4 @@
-Random is not random at all - fix;
+Random is not random at all - fix - DONE;
 
 Add testing because i want to track the changes in performance between modifications.
 

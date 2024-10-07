@@ -22,6 +22,7 @@ using Dimensions = Coordinates;
 using DamageUnits = SizeT;
 using HealthUnits = SizeT;
 
+
 class Unit
 {
 public:
@@ -379,11 +380,11 @@ public:
             }
             if(possible_tiles.size() == 1)
             {
-                m_arena.move_unit(i, possible_tiles[0]);    
+                m_arena.move_unit(i, possible_tiles[0]);
                 continue;
             }
             const auto options {possible_tiles.size() - 1};
-            const auto rand_int {RNG::random_uniform_uint((unsigned long)0, options)};
+            const auto rand_int {RNG::Generator<>::get().random_uniform_uint(0ul, options)};
             m_arena.move_unit(i, possible_tiles[rand_int]);
         }
     }
@@ -404,24 +405,14 @@ void time_test(Level &lvl)
     }
 }
 
-void test_random()
-{
-    for(int i{0}; i < 15; ++i)
-    {
-        std::cout << "Random number " << i << ": " << (long int)RNG::random_uint() << std::endl;
-    }
-}
-
 int main()
 {
-    test_random();
-    return 0;
     Level level;
     level.setup_level();
     level.setup_units();
 
-    time_test(level);
-    return 0;
+    //time_test(level);
+    //return 0;
 
     while(true)
     {
